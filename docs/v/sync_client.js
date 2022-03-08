@@ -1,6 +1,7 @@
 // Copyright (C) 2018 Richard Curtice, aka Cron Stardust. All rights reserved worldwide.
 
 const gWhenPageLoaded = getLocalTime();
+const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjcm9uc3R2LnJ3Y3Byb2R1Y3Rpb25zLmNvbSIsImF1ZCI6ImNyb25zdHYiLCJzY29wZSI6Ii90aW1lIC9tZXRhZGF0YS95b3V0dWJlIC9tZXRhZGF0YS92aW1lbyIsImlhdCI6MTY0NjcwNzE4Nn0.1ELZm14Ndp3KJn3eRnhzySyrwvTe1-FNhhwlx-LZuPY";
 
 let gPlayerStartPosition = 0;
 let gVideoId = "";
@@ -64,56 +65,64 @@ $(function () {
 		$("head").append(tag);
 	} else if (service_id == "vimeo") {
 		// Load the Vimeo Player - the script is already loaded.
-		$.ajax("get_data/vimeo?vid=" + gVideoId, {
-			dataType: "text",
-			success: function ytDataSucess(data) {
-				var vid_data = data.split(/[\n=]/);
-				var aspect_ratio_h_over_w = 1 * vid_data[3];
+		$.ajax(
+			"https://api1.cronstv.rwcproductions.com/metadata/vimeo?vid=" + gVideoId,
+			{
+				dataType: "text",
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+				success: function ytDataSucess(data) {
+					var vid_data = data.split(/[\n=]/);
+					var aspect_ratio_h_over_w = 1 * vid_data[3];
 
-				var player = new Vimeo.Player("player", {
-					height: 1024 * aspect_ratio_h_over_w,
-					width: 1024,
-					id: gVideoId,
-					background: true,
-					portrait: false,
-					title: false,
-				});
-
-				player
-					.setCurrentTime(gPlayerStartPosition)
-					.then(function () {
-						// seconds = the actual time that the player seeked to
-					})
-					.catch(function (error) {
-						$("body").append("<p>Error loading video: " + error.name + "</p>");
-						$("body").append("<p>" + error.message + "</p>");
-						$("#player").remove();
+					var player = new Vimeo.Player("player", {
+						height: 1024 * aspect_ratio_h_over_w,
+						width: 1024,
+						id: gVideoId,
+						background: true,
+						portrait: false,
+						title: false,
 					});
 
-				player.on("loaded", function () {
-					if (gIsPrim) {
-						$("#player")
-							.css(
-								"transform",
-								"translateY(" +
-									(1024 - aspect_ratio_h_over_w * 1024) / 2 +
-									"px) scale(1," +
-									1 / aspect_ratio_h_over_w +
-									")"
-							)
-							.attr("id", "primplayer");
-					}
-				});
+					player
+						.setCurrentTime(gPlayerStartPosition)
+						.then(function () {
+							// seconds = the actual time that the player seeked to
+						})
+						.catch(function (error) {
+							$("body").append(
+								"<p>Error loading video: " + error.name + "</p>"
+							);
+							$("body").append("<p>" + error.message + "</p>");
+							$("#player").remove();
+						});
 
-				player.on("ended", function () {
-					$("#player, #primplayer").remove();
-				});
+					player.on("loaded", function () {
+						if (gIsPrim) {
+							$("#player")
+								.css(
+									"transform",
+									"translateY(" +
+										(1024 - aspect_ratio_h_over_w * 1024) / 2 +
+										"px) scale(1," +
+										1 / aspect_ratio_h_over_w +
+										")"
+								)
+								.attr("id", "primplayer");
+						}
+					});
 
-				$("#player p, #primplayer p").remove();
+					player.on("ended", function () {
+						$("#player, #primplayer").remove();
+					});
 
-				console.log(aspect_ratio_h_over_w);
-			},
-		});
+					$("#player p, #primplayer p").remove();
+
+					console.log(aspect_ratio_h_over_w);
+				},
+			}
+		);
 	} else if (service_id == "livestream") {
 		// At this time livestream does not have an open API, or any API, that can be used to gather aspect ratio information or duration.
 		// Thus this only supports the active live stream embed operation.
@@ -157,49 +166,55 @@ $(function () {
 
 // eslint-disable-next-line no-unused-vars
 function onYouTubeIframeAPIReady() {
-	$.ajax("get_data/youtube?vid=" + gVideoId, {
-		dataType: "text",
-		success: function ytDataSucess(data) {
-			var vid_data = data.split(/[\n=]/);
-			var aspect_ratio_h_over_w = 1 * vid_data[3];
+	$.ajax(
+		"https://api1.cronstv.rwcproductions.com/metadata/youtube?vid=" + gVideoId,
+		{
+			dataType: "text",
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+			success: function ytDataSucess(data) {
+				var vid_data = data.split(/[\n=]/);
+				var aspect_ratio_h_over_w = 1 * vid_data[3];
 
-			new YT.Player("player", {
-				height: 1024 * aspect_ratio_h_over_w,
-				width: 1024,
-				videoId: gVideoId,
-				playerVars: {
-					controls: 0,
-					disablekb: 0,
-					iv_load_policy: 3,
-					rel: 0,
-					showinfo: 0,
-					modestbranding: 1,
-					enablejsapi: 1,
-					origin: "http://cronstv.rwcproductions.com",
-				},
-				suggestedQuality: "large",
-				events: {
-					onReady: onPlayerReady,
-					onStateChange: onPlayerStateChange,
-				},
-			});
+				new YT.Player("player", {
+					height: 1024 * aspect_ratio_h_over_w,
+					width: 1024,
+					videoId: gVideoId,
+					playerVars: {
+						controls: 0,
+						disablekb: 0,
+						iv_load_policy: 3,
+						rel: 0,
+						showinfo: 0,
+						modestbranding: 1,
+						enablejsapi: 1,
+						origin: "http://cronstv.rwcproductions.com",
+					},
+					suggestedQuality: "large",
+					events: {
+						onReady: onPlayerReady,
+						onStateChange: onPlayerStateChange,
+					},
+				});
 
-			console.log(aspect_ratio_h_over_w);
+				console.log(aspect_ratio_h_over_w);
 
-			if (gIsPrim) {
-				$("#player")
-					.css(
-						"transform",
-						"translateY(" +
-							(1024 - aspect_ratio_h_over_w * 1024) / 2 +
-							"px) scale(1," +
-							1 / aspect_ratio_h_over_w +
-							")"
-					)
-					.attr("id", "primplayer");
-			}
-		},
-	});
+				if (gIsPrim) {
+					$("#player")
+						.css(
+							"transform",
+							"translateY(" +
+								(1024 - aspect_ratio_h_over_w * 1024) / 2 +
+								"px) scale(1," +
+								1 / aspect_ratio_h_over_w +
+								")"
+						)
+						.attr("id", "primplayer");
+				}
+			},
+		}
+	);
 }
 
 // *TODO: Detect the buffering state change and jump ahead...  Or find a way to tell YT to skip frames somehow...
@@ -237,7 +252,7 @@ function getRemoteTime() {
 			cache: false,
 			dataType: "text",
 			headers: {
-				Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjcm9uc3R2LnJ3Y3Byb2R1Y3Rpb25zLmNvbSIsImF1ZCI6ImNyb25zdHYiLCJzY29wZSI6Ii90aW1lIiwiaWF0IjoxNjQ2NjE2ODAyfQ.E1HM3gZM2kdvUvmXnX1HLiqNy0ZNMfFMxdeuGUiT4CM"
+				Authorization: `Bearer ${token}`,
 			},
 		}).responseText * 1
 	);

@@ -232,10 +232,13 @@ function getURLParameter(name) {
 function getRemoteTime() {
 	return (
 		$.ajax({
-			url: "get_time.php",
+			url: "https://api1.cronstv.rwcproductions.com/time",
 			async: false,
 			cache: false,
 			dataType: "text",
+			headers: {
+				Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjcm9uc3R2LnJ3Y3Byb2R1Y3Rpb25zLmNvbSIsImF1ZCI6ImNyb25zdHYiLCJzY29wZSI6Ii90aW1lIiwiaWF0IjoxNjQ2NjE2ODAyfQ.E1HM3gZM2kdvUvmXnX1HLiqNy0ZNMfFMxdeuGUiT4CM"
+			},
 		}).responseText * 1
 	);
 }

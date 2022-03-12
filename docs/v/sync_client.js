@@ -177,7 +177,7 @@ function onYouTubeIframeAPIReady() {
 				var vid_data = data.split(/[\n=]/);
 				var aspect_ratio_h_over_w = 1 * vid_data[3];
 
-				new YT.Player("player", {
+				const player = new YT.Player("player", {
 					height: 1024 * aspect_ratio_h_over_w,
 					width: 1024,
 					videoId: gVideoId,
@@ -189,7 +189,8 @@ function onYouTubeIframeAPIReady() {
 						showinfo: 0,
 						modestbranding: 1,
 						enablejsapi: 1,
-						origin: "http://cronstv.rwcproductions.com",
+						origin: "https://cronstv.rwcproductions.com",
+						mute: 1, // https://developer.chrome.com/blog/autoplay/ Autoplay with sound is not allowed. Unless the site is a PWA, then it is: https://developer.chrome.com/blog/media-updates-in-chrome-73/#autoplay-pwa
 					},
 					suggestedQuality: "large",
 					events: {
@@ -198,7 +199,15 @@ function onYouTubeIframeAPIReady() {
 					},
 				});
 
-				console.log(aspect_ratio_h_over_w);
+				const muteCtrl = document.querySelector("#unmutectrl");
+				muteCtrl.addEventListener("click", () => {
+					muteCtrl.style.display = "none";
+
+					player.unMute();
+					player.setVolume(100);
+				});
+
+				console.log({ aspect_ratio_h_over_w });
 
 				if (gIsPrim) {
 					$("#player")
@@ -211,6 +220,14 @@ function onYouTubeIframeAPIReady() {
 								")"
 						)
 						.attr("id", "primplayer");
+					$("#unmutectrl").css(
+						"transform",
+						"translateY(" +
+							(1024 - aspect_ratio_h_over_w * 1024) / 2 +
+							"px) scale(1," +
+							1 / aspect_ratio_h_over_w +
+							")"
+					);
 				}
 			},
 		}
@@ -220,14 +237,26 @@ function onYouTubeIframeAPIReady() {
 // *TODO: Detect the buffering state change and jump ahead...  Or find a way to tell YT to skip frames somehow...
 
 function onPlayerStateChange(event) {
-	if (event.data == 0 /*YT.PlayerState.ENDED*/) {
-		$("#player, #primplayer").remove();
+	console.log({ f: onPlayerStateChange.name, event });
+
+	switch (event.data) {
+		case 0 /*YT.PlayerState.ENDED*/:
+			$("#player, #primplayer").remove();
+			break;
+		case 1 /*YT.PlayerState.PLAYING*/:
+			if (event.target.isMuted()) {
+				const muteCtrl = document.querySelector("#unmutectrl");
+				muteCtrl.style.display = "block";
+			}
+			break;
 	}
 }
 
 function onPlayerReady(event) {
+	console.log({ f: onPlayerReady.name, event });
+
 	event.target.seekTo(gPlayerStartPosition, true);
-	//event.target.playVideo(); // unneeded with the seek.
+	// event.target.playVideo();
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * */
